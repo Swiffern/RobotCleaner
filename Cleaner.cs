@@ -2,6 +2,7 @@
 using RobotCleaner.Data;
 using RobotCleaner.Data.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,35 +11,29 @@ namespace RobotCleaner
 {
     public class Cleaner : ICleaner
     {
-        private const int OFFSET = 100000;
-        private const int GRID_SIZE = 200000;
+        private const string EAST = "east";
+        private const string WEST = "west";
+        private const string NORTH = "north";
 
         private CleanerContext _context;
-
-        private Vector _currentPosition;
-        private bool[][] _places;
-        private long _uniquePlacesCleaned = 0;
 
         public Cleaner(CleanerContext context)
         {
             _context = context;
-            InitGrid();
         }
 
         public CleaningResult Clean(Instructions instructions)
         {
             var startTime = DateTime.Now;
 
-            _currentPosition = instructions.start;
-            _places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET] = true;
-            _uniquePlacesCleaned++;
+            var grid = new Grid(instructions.start);
 
-            foreach (var command in instructions.commands)
-                ProcessCommand(command);
+            foreach(var command in instructions.commands)
+                ProcessCommand(grid, command);
 
             var endTime = DateTime.Now;
 
-            return StoreResult(instructions.commands.Count, _uniquePlacesCleaned, (endTime - startTime).TotalSeconds);
+            return StoreResult(instructions.commands.Count, grid.UniquePlacesCleaned, (endTime - startTime).TotalSeconds);
         }
 
         #region Privates
@@ -59,43 +54,29 @@ namespace RobotCleaner
             return result;
         }
 
-        private void ProcessCommand(Command command)
+        private static void ProcessCommand(Grid grid, Command command)
         {
+            var direction = GetDirection(command.direction);
+
             for (int i = 0; i < command.steps; i++)
-                Move(command.direction);
+            {
+                grid.Move(direction.x, direction.y);
+            }
         }
 
-        private void Move(string direction)
+        private static (int x, int y) GetDirection(string direction)
         {
             switch (direction)
             {
-                case "east":
-                    _currentPosition.x++;
-                    break;
-                case "west":
-                    _currentPosition.x--;
-                    break;
-                case "north":
-                    _currentPosition.y++;
-                    break;
+                case EAST:
+                    return (1, 0);
+                case WEST:
+                    return (-1, 0);
+                case NORTH:
+                    return (0, 1);
                 default:
-                    _currentPosition.y--;
-                    break;
+                    return (0, -1);
             }
-
-            if (!_places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET])
-            {
-                _places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET] = true;
-                _uniquePlacesCleaned++;
-            }
-        }
-
-        private void InitGrid()
-        {
-            _places = new bool[GRID_SIZE][];
-
-            for (int i = 0; i < _places.Length; i++)
-                _places[i] = new bool[GRID_SIZE];
         }
 
         #endregion
