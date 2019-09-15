@@ -13,7 +13,7 @@ namespace RobotCleaner.Data.Models
 
         public int commands { get; set; }
 
-        public int result { get; set; }
+        public long result { get; set; }
 
         public double duration { get; set; }
     }

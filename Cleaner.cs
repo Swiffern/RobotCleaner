@@ -10,32 +10,40 @@ namespace RobotCleaner
 {
     public class Cleaner : ICleaner
     {
-        private Vector _currentPosition;
-        private HashSet<Vector> _places = new HashSet<Vector>();
+        private const int OFFSET = 100000;
+        private const int GRID_SIZE = 200000;
+
         private CleanerContext _context;
+
+        private Vector _currentPosition;
+        private bool[][] _places;
+        private long _uniquePlacesCleaned = 0;
 
         public Cleaner(CleanerContext context)
         {
             _context = context;
+            InitGrid();
         }
 
         public CleaningResult Clean(Instructions instructions)
         {
             var startTime = DateTime.Now;
-            var places = new HashSet<Vector>();
 
             _currentPosition = instructions.start;
-            places.Add(instructions.start);
+            _places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET] = true;
+            _uniquePlacesCleaned++;
 
             foreach (var command in instructions.commands)
                 ProcessCommand(command);
 
             var endTime = DateTime.Now;
 
-            return StoreResult(instructions.commands.Count, _places.Count, (endTime - startTime).TotalSeconds);
+            return StoreResult(instructions.commands.Count, _uniquePlacesCleaned, (endTime - startTime).TotalSeconds);
         }
 
-        private CleaningResult StoreResult(int numCommands, int uniquePlaces, double runtime)
+        #region Privates
+
+        private CleaningResult StoreResult(int numCommands, long uniquePlaces, double runtime)
         {
             var result = new CleaningResult
             {
@@ -51,37 +59,43 @@ namespace RobotCleaner
             return result;
         }
 
-        #region Privates
-
         private void ProcessCommand(Command command)
         {
-            var direction = GetDirection(command.direction);
-
             for (int i = 0; i < command.steps; i++)
-                Move(direction);
+                Move(command.direction);
         }
 
-        private void Move(Vector direction)
-        {
-            _currentPosition.x += direction.x;
-            _currentPosition.y += direction.y;
-
-            _places.Add(new Vector(_currentPosition.x, _currentPosition.y));
-        }
-
-        private Vector GetDirection(string direction)
+        private void Move(string direction)
         {
             switch (direction)
             {
                 case "east":
-                    return new Vector(1, 0);
+                    _currentPosition.x++;
+                    break;
                 case "west":
-                    return new Vector(-1, 0);
+                    _currentPosition.x--;
+                    break;
                 case "north":
-                    return new Vector(0, 1);
+                    _currentPosition.y++;
+                    break;
                 default:
-                    return new Vector(0, -1);
+                    _currentPosition.y--;
+                    break;
             }
+
+            if (!_places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET])
+            {
+                _places[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET] = true;
+                _uniquePlacesCleaned++;
+            }
+        }
+
+        private void InitGrid()
+        {
+            _places = new bool[GRID_SIZE][];
+
+            for (int i = 0; i < _places.Length; i++)
+                _places[i] = new bool[GRID_SIZE];
         }
 
         #endregion
