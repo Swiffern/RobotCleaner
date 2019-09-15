@@ -1,0 +1,31 @@
+version: "3"
+networks:
+    RoboNet:
+      driver: bridge
+services:
+    web:
+        build:
+          context: .
+          dockerfile: DockerFile
+        ports:
+          - "5000:5000"
+        environment:
+          ROBOT_CLEANER_ConnectionStrings__RobotCleanerConnection: "Server=db;Port=5432;Database=RobotCleaner;User Id=root;Password=pass;"
+        depends_on:
+          - db
+        networks:
+          - RoboNet
+    db:
+      image: "postgres:latest"
+      container_name: "robot_postgres"
+      ports:
+        - "5432"
+      volumes:
+        - robot_data:/var/lib/postgresql/data
+      environment:
+        POSTGRES_USER: "root"
+        POSTGRES_PASSWORD: "pass"
+      networks:
+        - RoboNet
+volumes:
+    robot_data:
