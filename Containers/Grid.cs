@@ -17,6 +17,7 @@ namespace RobotCleaner.Containers
         {
             _structure = InitGrid();
             _currentPosition = startPosition;
+            UniquePlacesCleaned++;
             _structure[_currentPosition.x + OFFSET][_currentPosition.y + OFFSET] = true;
         }
 
