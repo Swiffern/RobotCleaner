@@ -10,5 +10,9 @@ namespace RobotCleaner.Containers
         public string direction { get; set; }
 
         public int steps { get; set; }
+
+        public int posX { get; set; }
+
+        public int posY { get; set; }
     }
 }
